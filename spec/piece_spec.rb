@@ -1,10 +1,13 @@
 # frozen_string_literal: true
 
+require 'board'
 require 'piece'
 
 describe Pawn do
+  board = Board.new
   context 'when pawn is white' do
-    subject(:pawn) { Pawn.new(0, [0, 2]) }
+    subject(:pawn) { Pawn.new(0, [0, 2], board) }
+
     it 'allows a 1 square upwards move' do
       expect(pawn.move_valid?([0, 3])).to be true
     end
@@ -18,7 +21,7 @@ describe Pawn do
     end
 
     context 'when the pawn has not moved this game' do
-      subject(:fresh_pawn) { Pawn.new(0, [0, 1]) }
+      subject(:fresh_pawn) { Pawn.new(0, [0, 1], board) }
       it 'allows a double move' do
         expect(fresh_pawn.move_valid?([0, 3])).to be true
       end
@@ -26,7 +29,7 @@ describe Pawn do
   end
 
   context 'when pawn is black' do
-    subject(:pawn) { Pawn.new(1, [0, 5]) }
+    subject(:pawn) { Pawn.new(1, [0, 5], board) }
     it 'allows a 1 square downwards move' do
       expect(pawn.move_valid?([0, 4])).to be true
     end
@@ -40,7 +43,7 @@ describe Pawn do
     end
 
     context 'when the pawn has not moved this game' do
-      subject(:fresh_pawn) { Pawn.new(1, [0, 6]) }
+      subject(:fresh_pawn) { Pawn.new(1, [0, 6], board) }
       it 'allows a double move' do
         expect(fresh_pawn.move_valid?([0, 4])).to be true
       end

@@ -28,7 +28,7 @@ class Board
     2.times do |team|
       rank = ranks[team]
       8.times do |file|
-        squares[rank][file] = Pawn.new(team, [rank, file])
+        squares[rank][file] = Pawn.new(team, [rank, file], self)
       end
     end
   end
@@ -40,7 +40,7 @@ class Board
       rank = ranks[team]
       2.times do |file|
         file = files[file]
-        squares[rank][file] = Rook.new(team, [rank, file])
+        squares[rank][file] = Rook.new(team, [rank, file], self)
       end
     end
   end
@@ -52,7 +52,7 @@ class Board
       rank = ranks[team]
       2.times do |file|
         file = files[file]
-        squares[rank][file] = Knight.new(team, [rank, file])
+        squares[rank][file] = Knight.new(team, [rank, file], self)
       end
     end
   end
@@ -64,7 +64,7 @@ class Board
       rank = ranks[team]
       2.times do |file|
         file = files[file]
-        squares[rank][file] = Bishop.new(team, [rank, file])
+        squares[rank][file] = Bishop.new(team, [rank, file], self)
       end
     end
   end
@@ -74,7 +74,7 @@ class Board
     2.times do |team|
       rank = ranks[team]
       file = 3
-      squares[rank][file] = Queen.new(team, [rank, file])
+      squares[rank][file] = Queen.new(team, [rank, file], self)
     end
   end
 
@@ -83,7 +83,7 @@ class Board
     2.times do |team|
       rank = ranks[team]
       file = 4
-      squares[rank][file] = King.new(team, [rank, file])
+      squares[rank][file] = King.new(team, [rank, file], self)
     end
   end
 end
