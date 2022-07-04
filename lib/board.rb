@@ -10,7 +10,12 @@ class Board
     @squares = Array.new(dimensions) { Array.new(dimensions) }
 
     setup_pieces
-    print_board
+  end
+
+  def place_piece(piece)
+    rank = piece.position.value[0]
+    file = piece.position.value[1]
+    squares[rank][file] = piece
   end
 
   def on_board?(move)
@@ -21,9 +26,15 @@ class Board
   def blocked?(move, team)
     content = square_content(move)
     return content if content.nil?
-    return false if content != team
+    return false if content.team != team
 
     true
+  end
+
+  def square_content(move)
+    rank = move[0]
+    file = move[1]
+    squares[rank][file]
   end
 
   def print_board
@@ -32,7 +43,6 @@ class Board
     end
     print_footer
   end
-
   private
 
   def print_rank(rank, idx)
@@ -52,15 +62,6 @@ class Board
     print "\n\n"
   end
 
-  def square_content(move)
-    rank = move[0]
-    file = move[1]
-    content = squares[rank][file]
-    return content unless content
-
-    content.team
-  end
-
   def setup_pieces
     setup_pawns
     setup_rooks
@@ -75,7 +76,7 @@ class Board
     2.times do |team|
       rank = ranks[team]
       8.times do |file|
-        squares[rank][file] = Pawn.new(team, [rank, file], self)
+        Pawn.new(team, [rank, file], self)
       end
     end
   end
@@ -87,7 +88,7 @@ class Board
       rank = ranks[team]
       2.times do |file|
         file = files[file]
-        squares[rank][file] = Rook.new(team, [rank, file], self)
+        Rook.new(team, [rank, file], self)
       end
     end
   end
@@ -99,7 +100,7 @@ class Board
       rank = ranks[team]
       2.times do |switch|
         file = files[switch]
-        squares[rank][file] = Knight.new(team, [rank, file], self)
+        Knight.new(team, [rank, file], self)
       end
     end
   end
@@ -111,7 +112,7 @@ class Board
       rank = ranks[team]
       2.times do |file|
         file = files[file]
-        squares[rank][file] = Bishop.new(team, [rank, file], self)
+        Bishop.new(team, [rank, file], self)
       end
     end
   end
@@ -121,7 +122,7 @@ class Board
     2.times do |team|
       rank = ranks[team]
       file = 3
-      squares[rank][file] = Queen.new(team, [rank, file], self)
+      Queen.new(team, [rank, file], self)
     end
   end
 
@@ -130,7 +131,7 @@ class Board
     2.times do |team|
       rank = ranks[team]
       file = 4
-      squares[rank][file] = King.new(team, [rank, file], self)
+      King.new(team, [rank, file], self)
     end
   end
 end

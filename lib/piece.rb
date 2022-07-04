@@ -7,21 +7,22 @@ require 'board'
 class Piece
   include VectorMathInArrays
 
-  attr_reader :team
+  attr_reader :team, :position
 
-  def initialize(team, position)
+  def initialize(team, position, board)
     @team = team
     @position = Node.new(position)
-    @movement = []
+    @moves = []
+    compile_moves
+    find_legal_squares(board)
+    board.place_piece(self)
   end
 
-  def move_valid?(move)
+  def square_legal?(move)
     tree_contains?(move)
   end
 
   private
-
-  attr_reader :position
 
   def tree_contains?(move)
     stack = []
@@ -36,47 +37,70 @@ class Piece
     false
   end
 
-  def find_legal_moves(board)
-    @movement.each do |move|
+  def find_legal_squares(board)
+    @moves.each do |move|
       result = VectorAdd(move, position.value)
-      if board.on_board?(result) && !board.blocked?(result, team)
-        @position.children.push(Node.new(result))
-      end
+      add_legal_square(result) if validate_move(result, board)
     end
-    # @legal_moves.filter { |move| on_board?(move) }
-    # @legal_moves.filter { |move| unoccupied?(board, move) }
   end
+
+  def validate_move(move, board)
+    board.on_board?(move) && !board.blocked?(move, team)
+  end
+
+  def enemy_found?(board, square)
+    content = board.square_content(square)
+    !content.nil? && content.team != team
+  end
+
+  def add_legal_square(square)
+    @position.children.push(Node.new(square))
+  end
+
+  def compile_moves; end
 end
 
 class Pawn < Piece
-  def initialize(team, position, board)
-    super(team, position)
-    if team.zero?
-      @movement.push([1, 0])
-      @movement.push([2, 0]) if @position.value[0] == 1
-    else
-      @movement.push([-1, 0])
-      @movement.push([-2, 0]) if @position.value[0] == 6
-    end
-    find_legal_moves(board)
-  end
-
   def to_s
     !team.zero? ? "\u2659" : "\u265F"
   end
 
   private
 
-  def find_legal_moves(board)
-    super
+  def pawn_direction
+    team.zero? ? 1 : -1
+  end
+
+  def pawn_hasnt_moved
+    @position.value[0] == 1 && team.zero? ||
+      @position.value[0] == 6 && team == 1
+  end
+
+  def compile_moves
+    move = pawn_direction
+    @moves.push([move, 0])
+    @moves.push([move * 2, 0]) if pawn_hasnt_moved
+  end
+
+  def find_legal_squares(board)
+    super(board)
+    find_pawn_capture_squares(board)
+  end
+
+  def find_pawn_capture_squares(board)
+    target_rank = position.value[0] + pawn_direction
+    [1, -1].each do |diag|
+      target_file = position.value[1] + diag
+      add_legal_square([target_rank, target_file]) if enemy_found?(board, [target_rank, target_file])
+    end
   end
 end
 
 class Rook < Piece
   def initialize(team, position, board)
-    super(team, position)
-    @movement.push([0, 1])
-    find_legal_moves(board)
+    super(team, position, board)
+    @moves.push([0, 1])
+    find_legal_squares(board)
   end
 
   def to_s
@@ -86,10 +110,10 @@ end
 
 class Knight < Piece
   def initialize(team, position, board)
-    super(team, position)
-    @movement.concat([1, -1].product([2, -2]))
+    super(team, position, board)
+    @moves.concat([1, -1].product([2, -2]))
              .concat([2, -2].product([1, -1]))
-    find_legal_moves(board)
+    find_legal_squares(board)
   end
 
   def to_s
@@ -99,7 +123,7 @@ end
 
 class Bishop < Piece
   def initialize(team, position, board)
-    super(team, position)
+    super(team, position, board)
     @type = 4
   end
 
@@ -110,7 +134,7 @@ end
 
 class Queen < Piece
   def initialize(team, position, board)
-    super(team, position)
+    super(team, position, board)
     @type = 5
   end
 
@@ -121,7 +145,7 @@ end
 
 class King < Piece
   def initialize(team, position, board)
-    super(team, position)
+    super(team, position, board)
     @type = 6
   end
 
