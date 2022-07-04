@@ -136,13 +136,6 @@ class Knight < Piece
     @moves.concat([1, -1].product([2, -2]))
           .concat([2, -2].product([1, -1]))
   end
-
-  def find_legal_squares(board)
-    @moves.each do |dir|
-      result = VectorAdd(dir, position.value)
-      add_legal_square(result) if validate_square(result, board)
-    end
-  end
 end
 
 class Bishop < Piece
@@ -225,12 +218,5 @@ class King < Piece
       [0, 1],
       [0, -1]
     ]
-  end
-
-  def find_legal_squares(board)
-    @moves.each do |dir|
-      result = VectorAdd(dir, position.value)
-      add_legal_square(result) if validate_square(result, board)
-    end
   end
 end

@@ -6,8 +6,8 @@ require 'matrix'
 class Board
   attr_reader :squares
 
-  def initialize(dimensions = 8)
-    @squares = Array.new(dimensions) { Array.new(dimensions) }
+  def initialize
+    @squares = Array.new(8) { Array.new(8) }
 
     @pieces_in_play = [[], []]
     setup_pieces
@@ -21,8 +21,8 @@ class Board
   end
 
   def on_board?(move)
-    move[0].between?(0, @squares.length - 1) &&
-      move[1].between?(0, @squares.length - 1)
+    move[0].between?(0, 7) &&
+      move[1].between?(0, 7)
   end
 
   def blocked?(move, team)
@@ -49,7 +49,7 @@ class Board
   private
 
   def print_rank(rank, idx)
-    print "   #{'+---' * @squares.length}+\n#{@squares.length - idx}  "
+    print "   #{'+---' * 8}+\n#{8 - idx}  "
     rank.each do |square|
       print "| #{square || ' '} "
     end
@@ -58,8 +58,8 @@ class Board
 
   def print_footer
     alphabet = ('a'..'z').to_a
-    print "   #{'+---' * @squares.length}+\n   "
-    @squares.length.times do |i|
+    print "   #{'+---' * 8}+\n   "
+    8.times do |i|
       print "  #{alphabet[i]} "
     end
     print "\n\n"
