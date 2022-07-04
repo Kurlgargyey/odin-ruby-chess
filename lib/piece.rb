@@ -39,7 +39,7 @@ class Piece
 
   def find_legal_squares(board)
     @moves.each do |move|
-      result = VectorAdd(move, position.value)
+      result = vector_add(move, position.value)
       add_legal_square(result) if validate_square(result, board)
     end
   end
@@ -116,12 +116,12 @@ class Rook < Piece
 
   def find_legal_squares(board)
     @moves.each do |dir|
-      result = VectorAdd(dir, position.value)
+      result = vector_add(dir, position.value)
       while validate_square(result, board)
         add_legal_square(result)
         break if enemy_found?(result, board)
 
-        result = VectorAdd(dir, result)
+        result = vector_add(dir, result)
       end
     end
   end
@@ -158,12 +158,12 @@ class Bishop < Piece
 
   def find_legal_squares(board)
     @moves.each do |dir|
-      result = VectorAdd(dir, position.value)
+      result = vector_add(dir, position.value)
       while validate_square(result, board)
         add_legal_square(result)
         break if enemy_found?(result, board)
 
-        result = VectorAdd(dir, result)
+        result = vector_add(dir, result)
       end
     end
   end
@@ -191,12 +191,12 @@ class Queen < Piece
 
   def find_legal_squares(board)
     @moves.each do |dir|
-      result = VectorAdd(dir, position.value)
+      result = vector_add(dir, position.value)
       while validate_square(result, board)
         add_legal_square(result)
         break if enemy_found?(result, board)
 
-        result = VectorAdd(dir, result)
+        result = vector_add(dir, result)
       end
     end
   end
