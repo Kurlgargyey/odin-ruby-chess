@@ -40,15 +40,15 @@ class Piece
   def find_legal_squares(board)
     @moves.each do |move|
       result = VectorAdd(move, position.value)
-      add_legal_square(result) if validate_move(result, board)
+      add_legal_square(result) if validate_square(result, board)
     end
   end
 
-  def validate_move(move, board)
-    board.on_board?(move) && !board.blocked?(move, team)
+  def validate_square(square, board)
+    board.on_board?(square) && !board.blocked?(square, team)
   end
 
-  def enemy_found?(board, square)
+  def enemy_found?(square, board)
     content = board.square_content(square)
     !content.nil? && content.team != team
   end
@@ -77,9 +77,9 @@ class Pawn < Piece
   end
 
   def compile_moves
-    move = pawn_direction
-    @moves.push([move, 0])
-    @moves.push([move * 2, 0]) if pawn_hasnt_moved
+    direction = pawn_direction
+    @moves.push([direction, 0])
+    @moves.push([direction * 2, 0]) if pawn_hasnt_moved
   end
 
   def find_legal_squares(board)
@@ -91,20 +91,37 @@ class Pawn < Piece
     target_rank = position.value[0] + pawn_direction
     [1, -1].each do |diag|
       target_file = position.value[1] + diag
-      add_legal_square([target_rank, target_file]) if enemy_found?(board, [target_rank, target_file])
+      add_legal_square([target_rank, target_file]) if enemy_found?([target_rank, target_file], board)
     end
   end
 end
 
 class Rook < Piece
-  def initialize(team, position, board)
-    super(team, position, board)
-    @moves.push([0, 1])
-    find_legal_squares(board)
-  end
-
   def to_s
     !team.zero? ? "\u2656" : "\u265C"
+  end
+
+  private
+
+  def compile_moves
+    @moves = [
+      [1, 0],
+      [-1, 0],
+      [0, 1],
+      [0, -1]
+    ]
+  end
+
+  def find_legal_squares(board)
+    @moves.each do |dir|
+      result = VectorAdd(dir, position.value)
+      while validate_square(result, board)
+        add_legal_square(result)
+        break if enemy_found?(result, board)
+
+        result = VectorAdd(dir, result)
+      end
+    end
   end
 end
 
