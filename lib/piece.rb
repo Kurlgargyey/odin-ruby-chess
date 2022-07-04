@@ -48,8 +48,10 @@ class Piece
     board.on_board?(square) && !board.blocked?(square, team)
   end
 
-  def enemy_found?(square, board)
-    content = board.square_content(square)
+  def enemy_found?(target_square, board)
+    target_rank = target_square[0]
+    target_file = target_square[1]
+    content = board.squares[target_rank][target_file]
     !content.nil? && content.team != team
   end
 

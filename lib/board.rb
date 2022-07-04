@@ -20,23 +20,20 @@ class Board
     @pieces_in_play[piece.team].push(piece)
   end
 
-  def on_board?(move)
-    move[0].between?(0, 7) &&
-      move[1].between?(0, 7)
+  def on_board?(square)
+    square[0].between?(0, 7) &&
+      square[1].between?(0, 7)
   end
 
-  def blocked?(move, team)
-    content = square_content(move)
+  def blocked?(target_square, team)
+    target_rank = target_square[0]
+    target_file = target_square[1]
+
+    content = squares[target_rank][target_file]
     return content if content.nil?
     return false if content.team != team
 
     true
-  end
-
-  def square_content(move)
-    rank = move[0]
-    file = move[1]
-    squares[rank][file]
   end
 
   def print_board
