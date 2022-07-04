@@ -126,47 +126,111 @@ class Rook < Piece
 end
 
 class Knight < Piece
-  def initialize(team, position, board)
-    super(team, position, board)
-    @moves.concat([1, -1].product([2, -2]))
-             .concat([2, -2].product([1, -1]))
-    find_legal_squares(board)
-  end
-
   def to_s
     !team.zero? ? "\u2658" : "\u265E"
+  end
+
+  private
+
+  def compile_moves
+    @moves.concat([1, -1].product([2, -2]))
+          .concat([2, -2].product([1, -1]))
+  end
+
+  def find_legal_squares(board)
+    @moves.each do |dir|
+      result = VectorAdd(dir, position.value)
+      add_legal_square(result) if validate_square(result, board)
+    end
   end
 end
 
 class Bishop < Piece
-  def initialize(team, position, board)
-    super(team, position, board)
-    @type = 4
-  end
-
   def to_s
     !team.zero? ? "\u2657" : "\u265D"
+  end
+
+  private
+
+  def compile_moves
+    @moves = [
+      [1, 1],
+      [-1, 1],
+      [1, -1],
+      [-1, -1]
+    ]
+  end
+
+  def find_legal_squares(board)
+    @moves.each do |dir|
+      result = VectorAdd(dir, position.value)
+      while validate_square(result, board)
+        add_legal_square(result)
+        break if enemy_found?(result, board)
+
+        result = VectorAdd(dir, result)
+      end
+    end
   end
 end
 
 class Queen < Piece
-  def initialize(team, position, board)
-    super(team, position, board)
-    @type = 5
-  end
-
   def to_s
     !team.zero? ? "\u2655" : "\u265B"
+  end
+
+  private
+
+  def compile_moves
+    @moves = [
+      [1, 1],
+      [-1, 1],
+      [1, -1],
+      [-1, -1],
+      [1, 0],
+      [-1, 0],
+      [0, 1],
+      [0, -1]
+    ]
+  end
+
+  def find_legal_squares(board)
+    @moves.each do |dir|
+      result = VectorAdd(dir, position.value)
+      while validate_square(result, board)
+        add_legal_square(result)
+        break if enemy_found?(result, board)
+
+        result = VectorAdd(dir, result)
+      end
+    end
   end
 end
 
 class King < Piece
-  def initialize(team, position, board)
-    super(team, position, board)
-    @type = 6
-  end
-
   def to_s
     !team.zero? ? "\u2654" : "\u265A"
+  end
+
+  private
+
+  def compile_moves
+    @moves = [
+      [1, 1],
+      [-1, 1],
+      [1, -1],
+      [-1, -1],
+      [1, 0],
+      [-1, 0],
+      [0, 1],
+      [0, -1]
+    ]
+  end
+
+  def find_legal_squares(board)
+    @moves.each do |dir|
+      result = VectorAdd(dir, position.value)
+      add_legal_square(result) if validate_square(result, board)
+    end
   end
 end

@@ -9,13 +9,17 @@ class Board
   def initialize(dimensions = 8)
     @squares = Array.new(dimensions) { Array.new(dimensions) }
 
+    @white_pieces = []
+    @black_pieces = []
     setup_pieces
   end
 
   def place_piece(piece)
+    piece_arrs = [@white_pieces, @black_pieces]
     rank = piece.position.value[0]
     file = piece.position.value[1]
     squares[rank][file] = piece
+    piece_arrs[piece.team].push(piece)
   end
 
   def on_board?(move)
