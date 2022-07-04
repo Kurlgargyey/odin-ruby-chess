@@ -26,7 +26,7 @@ class Piece
   def tree_contains?(move)
     stack = []
     @position.children.each { |child| stack.push(child) }
-    curr = stack.pop
+    curr = stack.shift
     while curr
       return true if curr.value == move
 
@@ -39,19 +39,12 @@ class Piece
   def find_legal_moves(board)
     @movement.each do |move|
       result = VectorAdd(move, position.value)
-      @position.children.push(Node.new(result)) if on_board?(result)
+      if board.on_board?(result) && !board.blocked?(result, team)
+        @position.children.push(Node.new(result))
+      end
     end
     # @legal_moves.filter { |move| on_board?(move) }
     # @legal_moves.filter { |move| unoccupied?(board, move) }
-  end
-
-  def on_board?(move)
-    move[0].between?(0, 7) && move[1].between?(0, 7)
-  end
-
-  def unoccupied?(board, move)
-    board.squares[move[0]][move[1]].nil? ||
-      board.squares[move[0]][move[1]].team != team
   end
 end
 
@@ -59,20 +52,23 @@ class Pawn < Piece
   def initialize(team, position, board)
     super(team, position)
     if team.zero?
-      @movement.push([0, 1])
-      @movement.push([0, 2]) if @position.value[1] == 1
+      @movement.push([1, 0])
+      @movement.push([2, 0]) if @position.value[0] == 1
     else
-      @movement.push([0, -1])
-      @movement.push([0, -2]) if @position.value[1] == 6
+      @movement.push([-1, 0])
+      @movement.push([-2, 0]) if @position.value[0] == 6
     end
     find_legal_moves(board)
+  end
+
+  def to_s
+    !team.zero? ? "\u2659" : "\u265F"
   end
 
   private
 
   def find_legal_moves(board)
     super
-    @legal_moves
   end
 end
 
@@ -81,6 +77,10 @@ class Rook < Piece
     super(team, position)
     @movement.push([0, 1])
     find_legal_moves(board)
+  end
+
+  def to_s
+    !team.zero? ? "\u2656" : "\u265C"
   end
 end
 
@@ -91,12 +91,20 @@ class Knight < Piece
              .concat([2, -2].product([1, -1]))
     find_legal_moves(board)
   end
+
+  def to_s
+    !team.zero? ? "\u2658" : "\u265E"
+  end
 end
 
 class Bishop < Piece
   def initialize(team, position, board)
     super(team, position)
     @type = 4
+  end
+
+  def to_s
+    !team.zero? ? "\u2657" : "\u265D"
   end
 end
 
@@ -105,11 +113,19 @@ class Queen < Piece
     super(team, position)
     @type = 5
   end
+
+  def to_s
+    !team.zero? ? "\u2655" : "\u265B"
+  end
 end
 
 class King < Piece
   def initialize(team, position, board)
     super(team, position)
     @type = 6
+  end
+
+  def to_s
+    !team.zero? ? "\u2654" : "\u265A"
   end
 end
