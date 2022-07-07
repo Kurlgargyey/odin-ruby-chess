@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require 'piece'
-require 'matrix'
+require_relative 'piece'
+require_relative 'vector_math'
 
 class Board
   attr_reader :squares
@@ -13,10 +13,18 @@ class Board
     setup_pieces
   end
 
+  def move_piece(square, piece)
+    old_pos = piece.position.value
+
+    piece.move(square, self)
+    set_square_content(piece.position.value, piece)
+
+    set_square_content(old_pos, nil)
+    piece
+  end
+
   def place_piece(piece)
-    rank = piece.position.value[0]
-    file = piece.position.value[1]
-    squares[rank][file] = piece
+    set_square_content(piece.position.value, piece)
     @pieces_in_play[piece.team].push(piece)
   end
 
@@ -26,10 +34,7 @@ class Board
   end
 
   def blocked?(target_square, team)
-    target_rank = target_square[0]
-    target_file = target_square[1]
-
-    content = squares[target_rank][target_file]
+    content = square_content(target_square)
     return content if content.nil?
     return false if content.team != team
 
@@ -41,6 +46,14 @@ class Board
       print_rank(rank, idx)
     end
     print_footer
+  end
+
+  def square_content(square)
+    squares[square[0]][square[1]]
+  end
+
+  def set_square_content(square, content)
+    squares[square[0]][square[1]] = content
   end
 
   private

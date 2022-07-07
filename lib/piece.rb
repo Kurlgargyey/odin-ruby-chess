@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require 'vector_math'
-require 'node'
-require 'board'
+require_relative 'vector_math'
+require_relative 'node'
+require_relative 'board'
 
 class Piece
   include VectorMathInArrays
@@ -20,6 +20,11 @@ class Piece
 
   def square_legal?(move)
     tree_contains?(move)
+  end
+
+  def move(square, board)
+    @position = Node.new(square)
+    find_legal_squares(board)
   end
 
   private
@@ -49,9 +54,7 @@ class Piece
   end
 
   def enemy_found?(target_square, board)
-    target_rank = target_square[0]
-    target_file = target_square[1]
-    content = board.squares[target_rank][target_file]
+    content = board.square_content(target_square)
     !content.nil? && content.team != team
   end
 
