@@ -21,13 +21,17 @@ class Game
   private
 
   def game_loop
+    turn = 1
     loop do
-      turn = 1
       process_turn(turn)
       turn += 1 if @active_player.zero?
       save_game
       quit_prompt
     end
+  end
+
+  def check_check(player)
+
   end
 
   def process_turn(turn)
