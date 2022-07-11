@@ -210,6 +210,19 @@ class King < Piece
     !team.zero? ? "\u2654" : "\u265A"
   end
 
+  def check?(board)
+    enemy_pieces = board.pieces_in_play[[0, 1][team - 1]]
+    checking_pieces = []
+    enemy_pieces.each do |piece|
+      checking_pieces << piece if piece.square_legal?(position.value)
+    end
+    !checking_pieces.empty?
+  end
+
+  def checkmate?(board)
+    position.children.empty? && check?(board)
+  end
+
   private
 
   def compile_moves
@@ -223,5 +236,12 @@ class King < Piece
       [0, 1],
       [0, -1]
     ]
+  end
+
+  def validate_square(square, board)
+    enemy_pieces = board.pieces_in_play[[0, 1][team - 1]]
+    board.on_board?(square) &&
+      !board.blocked?(square, team) &&
+      enemy_pieces.any? { |piece| piece.square_legal?(square) }
   end
 end

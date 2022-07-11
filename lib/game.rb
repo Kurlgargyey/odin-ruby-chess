@@ -23,6 +23,7 @@ class Game
   def game_loop
     turn = 1
     loop do
+      exit if checkmate?(active_player)
       process_turn(turn)
       turn += 1 if @active_player.zero?
       save_game
@@ -30,23 +31,47 @@ class Game
     end
   end
 
-  def check_check(player)
+  def check?(team)
+    king = board.pieces_in_play[team].select do |e|
+      e.is_a?(King)
+    end[0]
+    if king.check?(board)
+      puts 'Your king is in check.'
+      true
+    end
+    false
+  end
 
+  def checkmate?(team)
+    king = board.pieces_in_play[team].select do |e|
+      e.is_a?(King)
+    end[0]
+    if king.checkmate?(board)
+      puts 'Your king is in checkmate.'
+      true
+    end
+    false
   end
 
   def process_turn(turn)
     colors = %w[white black]
     board.print_board
-    @history << "#{turn}." if @active_player.zero?
     puts "It is #{colors[active_player]}'s turn."
     moved_piece = process_move
+    @history << "#{turn}." if @active_player.zero?
     @history << "#{map_move_to_notation(moved_piece, moved_piece.position.value)} "
     board.print_board
+    @active_player = @players.rotate![0]
   end
 
   def process_move
-    @active_player = @players.rotate![0]
-    input_move
+    save_game
+    moved_piece = input_move
+    while king_check(@active_player)
+      puts 'Try a different move.'
+      load_game
+      moved_piece = input_move
+    end
   end
 
   def load_prompt
@@ -102,7 +127,7 @@ class Game
     puts 'From which square would you like to move?'
     origin = input_square
     content = board.square_content(origin)
-    return content if content && content.team == @players[1]
+    return content if content && content.team == @active_player
 
     puts "You don't have a piece on that square."
     input_piece
