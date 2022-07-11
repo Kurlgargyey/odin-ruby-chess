@@ -4,63 +4,104 @@ require_relative 'board'
 require_relative 'piece'
 
 class Game
+  SAVE_PATH = '../../saves/save.dat'
+
+  attr_reader :history, :players, :active_player, :board
+
   def initialize
-    @history = +''
-    @players = [0, 1]
-    @active_player = 0
-    @board = Board.new
+    Dir.mkdir '../../saves' unless Dir.exist?('../../saves')
+    setup
+    load_prompt
   end
 
   def run
-    turn = 1
-    board.print_board
-    moved_piece = process_turn
-    @history << "#{turn}.#{map_move_to_notation(moved_piece, moved_piece.position.value)} "
-    board.print_board
-    moved_piece = process_turn
-    @history << "#{map_move_to_notation(moved_piece, moved_piece.position.value)} "
-    turn += 1
+    game_loop
   end
 
   private
 
-  attr_reader :board
+  def game_loop
+    loop do
+      turn = 1
+      process_turn(turn)
+      turn += 1 if @active_player.zero?
+      save_game
+      quit_prompt
+    end
+  end
 
-  def process_turn
+  def process_turn(turn)
+    colors = %w[white black]
+    board.print_board
+    @history << "#{turn}." if @active_player.zero?
+    puts "It is #{colors[active_player]}'s turn."
+    moved_piece = process_move
+    @history << "#{map_move_to_notation(moved_piece, moved_piece.position.value)} "
+    board.print_board
+  end
+
+  def process_move
     @active_player = @players.rotate![0]
     input_move
+  end
+
+  def load_prompt
+    puts 'Would you like to load the game from savedata?'
+    load_game if input_yesno
+  end
+
+  def load_game
+    savedata = Marshal.load(File.binread(Game::SAVE_PATH))
+    params = [savedata.history, savedata.players, savedata.active_player, savedata.board]
+    setup(params)
+  end
+
+  def setup(params = [+'', [0, 1], 0, Board.new])
+    @history = params[0]
+    @players = params[1]
+    @active_player = params[2]
+    @board = params[3]
+  end
+
+  def quit_prompt
+    puts 'Would you like to take a break?'
+    exit if input_yesno
+  end
+
+  def save_game
+    File.open(SAVE_PATH, 'wb') do |file|
+      file.write(Marshal.dump(self))
+    end
   end
 
   def input_move
     piece = input_piece
     destination = input_destination(piece)
-    puts "You are trying to move the #{piece.class.name} on #{map_square_to_coords(piece.position.value)}."
+    puts "You are moving the #{piece.class.name} on #{map_square_to_coords(piece.position.value)}."
     puts "It will move to #{map_square_to_coords(destination)}."
     puts 'Would you like to reconsider?'
-    ans = input_yesno
-    return board.move_piece(destination, piece) unless ans
+    return board.move_piece(destination, piece) unless input_yesno
 
     input_move
   end
 
   def input_destination(piece)
     puts 'Where would you like to move?'
-    validate_destination(piece)
+    destination = input_square
+    return destination if piece.square_legal?(destination)
+
+    puts "The #{piece.class.name} can't move to that square."
+    input_destination
   end
 
   def input_piece
     puts 'From which square would you like to move?'
     origin = input_square
-    board.square_content(origin)
-  end
+    content = board.square_content(origin)
+    return content if content && content.team == @players[1]
 
-  def validate_destination(piece)
-    destination = input_square
-    until piece.square_legal?(destination)
-      puts "The #{piece.class.name} can't move to that square."
-      destination = input_square
-    end
-    destination
+    puts "You don't have a piece on that square."
+    input_piece
   end
 
   def input_type
