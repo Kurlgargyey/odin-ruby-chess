@@ -4,7 +4,7 @@ require_relative 'piece'
 require_relative 'vector_math'
 
 class Board
-  attr_reader :squares
+  attr_reader :squares, :pieces_in_play
 
   def initialize
     @squares = Array.new(8) { Array.new(8) }
@@ -15,11 +15,10 @@ class Board
 
   def move_piece(square, piece)
     old_pos = piece.position.value
-
-    piece.move(square, self)
+    piece.move(square)
     set_square_content(piece.position.value, piece)
-
     set_square_content(old_pos, nil)
+    update_pieces(piece)
     piece
   end
 
@@ -57,6 +56,17 @@ class Board
   end
 
   private
+
+  def update_pieces(moved_piece)
+    @pieces_in_play.each do |team|
+      team.each do |team_piece|
+        team_piece.find_legal_squares(self)
+      end
+    end
+    @pieces_in_play[[0, 1][moved_piece.team - 1]].reject! do |enemy_piece|
+      enemy_piece.position.value == moved_piece.position.value
+    end
+  end
 
   def print_rank(rank, idx)
     print "   #{'+---' * 8}+\n#{8 - idx}  "

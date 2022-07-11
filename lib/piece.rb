@@ -22,9 +22,15 @@ class Piece
     tree_contains?(move)
   end
 
-  def move(square, board)
+  def move(square)
     @position = Node.new(square)
-    find_legal_squares(board)
+  end
+
+  def find_legal_squares(board)
+    @moves.each do |move|
+      result = vector_add(move, position.value)
+      add_legal_square(result) if validate_square(result, board)
+    end
   end
 
   private
@@ -40,13 +46,6 @@ class Piece
       curr = stack.pop
     end
     false
-  end
-
-  def find_legal_squares(board)
-    @moves.each do |move|
-      result = vector_add(move, position.value)
-      add_legal_square(result) if validate_square(result, board)
-    end
   end
 
   def validate_square(square, board)
@@ -66,8 +65,23 @@ class Piece
 end
 
 class Pawn < Piece
+  def initialize(team, position, board)
+    super(team, position, board)
+    @has_moved = false
+  end
+
   def to_s
     !team.zero? ? "\u2659" : "\u265F"
+  end
+
+  def find_legal_squares(board)
+    super(board)
+    find_pawn_capture_squares(board)
+  end
+
+  def move(square)
+    super(square)
+    @has_moved = true
   end
 
   private
@@ -76,20 +90,10 @@ class Pawn < Piece
     team.zero? ? 1 : -1
   end
 
-  def pawn_hasnt_moved
-    @position.value[0] == 1 && team.zero? ||
-      @position.value[0] == 6 && team == 1
-  end
-
   def compile_moves
     direction = pawn_direction
     @moves.push([direction, 0])
-    @moves.push([direction * 2, 0]) if pawn_hasnt_moved
-  end
-
-  def find_legal_squares(board)
-    super(board)
-    find_pawn_capture_squares(board)
+    @moves.push([direction * 2, 0]) if @has_moved
   end
 
   def find_pawn_capture_squares(board)
@@ -102,19 +106,13 @@ class Pawn < Piece
 end
 
 class Rook < Piece
-  def to_s
-    !team.zero? ? "\u2656" : "\u265C"
+  def initialize(team, position, board)
+    super(team, position, board)
+    @has_moved = false
   end
 
-  private
-
-  def compile_moves
-    @moves = [
-      [1, 0],
-      [-1, 0],
-      [0, 1],
-      [0, -1]
-    ]
+  def to_s
+    !team.zero? ? "\u2656" : "\u265C"
   end
 
   def find_legal_squares(board)
@@ -127,6 +125,22 @@ class Rook < Piece
         result = vector_add(dir, result)
       end
     end
+  end
+
+  def move(square)
+    super(square)
+    @has_moved = true
+  end
+
+  private
+
+  def compile_moves
+    @moves = [
+      [1, 0],
+      [-1, 0],
+      [0, 1],
+      [0, -1]
+    ]
   end
 end
 
@@ -148,6 +162,18 @@ class Bishop < Piece
     !team.zero? ? "\u2657" : "\u265D"
   end
 
+  def find_legal_squares(board)
+    @moves.each do |dir|
+      result = vector_add(dir, position.value)
+      while validate_square(result, board)
+        add_legal_square(result)
+        break if enemy_found?(result, board)
+
+        result = vector_add(dir, result)
+      end
+    end
+  end
+
   private
 
   def compile_moves
@@ -157,6 +183,12 @@ class Bishop < Piece
       [1, -1],
       [-1, -1]
     ]
+  end
+end
+
+class Queen < Piece
+  def to_s
+    !team.zero? ? "\u2655" : "\u265B"
   end
 
   def find_legal_squares(board)
@@ -170,11 +202,10 @@ class Bishop < Piece
       end
     end
   end
-end
 
-class Queen < Piece
-  def to_s
-    !team.zero? ? "\u2655" : "\u265B"
+  def move(square)
+    super(square)
+    @has_moved = true
   end
 
   private
@@ -191,36 +222,32 @@ class Queen < Piece
       [0, -1]
     ]
   end
-
-  def find_legal_squares(board)
-    @moves.each do |dir|
-      result = vector_add(dir, position.value)
-      while validate_square(result, board)
-        add_legal_square(result)
-        break if enemy_found?(result, board)
-
-        result = vector_add(dir, result)
-      end
-    end
-  end
 end
 
 class King < Piece
+  def initialize(team, position, board)
+    super(team, position, board)
+    @has_moved = false
+  end
+
   def to_s
     !team.zero? ? "\u2654" : "\u265A"
   end
 
-  def check?(board)
+  def check?(board, square = position.value)
     enemy_pieces = board.pieces_in_play[[0, 1][team - 1]]
     checking_pieces = []
     enemy_pieces.each do |piece|
-      checking_pieces << piece if piece.square_legal?(position.value)
+      checking_pieces << piece if piece.square_legal?(square)
     end
     !checking_pieces.empty?
   end
 
   def checkmate?(board)
     position.children.empty? && check?(board)
+  end
+
+  def rochade()
   end
 
   private

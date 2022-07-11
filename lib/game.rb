@@ -22,7 +22,10 @@ class Game
 
   def game_loop
     turn = 1
+    colors = %w[white black]
     loop do
+      board.print_board
+      puts "It is #{colors[active_player]}'s turn."
       exit if checkmate?(active_player)
       process_turn(turn)
       turn += 1 if @active_player.zero?
@@ -37,7 +40,7 @@ class Game
     end[0]
     if king.check?(board)
       puts 'Your king is in check.'
-      true
+      return true
     end
     false
   end
@@ -48,15 +51,12 @@ class Game
     end[0]
     if king.checkmate?(board)
       puts 'Your king is in checkmate.'
-      true
+      return true
     end
     false
   end
 
   def process_turn(turn)
-    colors = %w[white black]
-    board.print_board
-    puts "It is #{colors[active_player]}'s turn."
     moved_piece = process_move
     @history << "#{turn}." if @active_player.zero?
     @history << "#{map_move_to_notation(moved_piece, moved_piece.position.value)} "
@@ -67,11 +67,12 @@ class Game
   def process_move
     save_game
     moved_piece = input_move
-    while king_check(@active_player)
+    while check?(@active_player)
       puts 'Try a different move.'
       load_game
       moved_piece = input_move
     end
+    moved_piece
   end
 
   def load_prompt
@@ -120,7 +121,7 @@ class Game
     return destination if piece.square_legal?(destination)
 
     puts "The #{piece.class.name} can't move to that square."
-    input_destination
+    input_destination(piece)
   end
 
   def input_piece
@@ -140,7 +141,7 @@ class Game
   end
 
   def input_square
-    files = ('a'..'g').to_a
+    files = ('a'..'h').to_a
     square = gets.chomp until match_coords(square)
     rank = square[1].to_i - 1
     file = files.index(square[0])
@@ -156,12 +157,12 @@ class Game
   end
 
   def match_coords(input)
-    regex = Regexp.new('[a-g][1-8]')
+    regex = Regexp.new('[a-h][1-8]')
     regex.match input
   end
 
   def map_square_to_coords(square)
-    files = ('a'..'g').to_a
+    files = ('a'..'h').to_a
     rank = square[0]
     file = square[1]
     "#{files[file]}#{rank + 1}"
