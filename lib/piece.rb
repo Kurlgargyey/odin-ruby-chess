@@ -27,6 +27,7 @@ class Piece
   end
 
   def find_legal_squares(board)
+    @position.children = []
     @moves.each do |move|
       result = vector_add(move, position.value)
       add_legal_square(result) if validate_square(result, board)
@@ -65,9 +66,11 @@ class Piece
 end
 
 class Pawn < Piece
+  attr_reader :first_move
+
   def initialize(team, position, board)
+    @first_move = true
     super(team, position, board)
-    @has_moved = false
   end
 
   def to_s
@@ -75,13 +78,16 @@ class Pawn < Piece
   end
 
   def find_legal_squares(board)
-    super(board)
+    @position.children = []
+    result = vector_add(@moves[0], position.value)
+    add_legal_square(result) if validate_square(result, board)
+    add_first_move(board)
     find_pawn_capture_squares(board)
   end
 
   def move(square)
+    @first_move = false
     super(square)
-    @has_moved = true
   end
 
   private
@@ -93,19 +99,41 @@ class Pawn < Piece
   def compile_moves
     direction = pawn_direction
     @moves.push([direction, 0])
-    @moves.push([direction * 2, 0]) if @has_moved
+  end
+
+  def add_first_move(board)
+    return unless first_move
+
+    result = vector_add(vector_scale(@moves[0], 2), position.value)
+    add_legal_square(result) if validate_square(result, board)
   end
 
   def find_pawn_capture_squares(board)
     target_rank = position.value[0] + pawn_direction
     [1, -1].each do |diag|
       target_file = position.value[1] + diag
-      add_legal_square([target_rank, target_file]) if enemy_found?([target_rank, target_file], board)
+      if enemy_found?([target_rank, target_file], board) ||
+         en_passant?([target_rank, target_file], board)
+        add_legal_square([target_rank, target_file])
+      end
     end
+  end
+
+  def en_passant?(target_square, board)
+    target_square == board.en_passant_square
+  end
+
+  def validate_square(square, board)
+    return false unless board.on_board?(square)
+    return true unless board.square_content(square)
+
+    false
   end
 end
 
 class Rook < Piece
+  attr_reader :has_moved
+
   def initialize(team, position, board)
     super(team, position, board)
     @has_moved = false
@@ -225,6 +253,8 @@ class Queen < Piece
 end
 
 class King < Piece
+  attr_reader :has_moved
+
   def initialize(team, position, board)
     super(team, position, board)
     @has_moved = false
@@ -232,6 +262,12 @@ class King < Piece
 
   def to_s
     !team.zero? ? "\u2654" : "\u265A"
+  end
+
+  def find_legal_squares(board)
+    super(board)
+    add_legal_square([position.value[0], 2]) if big_rochade_check(board)
+    add_legal_square([position.value[0], 6]) if small_rochade_check(board)
   end
 
   def check?(board, square = position.value)
@@ -247,10 +283,67 @@ class King < Piece
     position.children.empty? && check?(board)
   end
 
-  def rochade()
+  def small_rochade(board)
+    return unless small_rochade_check(board)
+
+    board.move_piece([position.value[0], 6], self)
+    board.move_piece([position.value[0], 5], board.square_content([position.value[0], 7]))
+    'o-o'
+  end
+
+  def big_rochade(board)
+    return unless big_rochade_check(board)
+
+    board.move_piece([position.value[0], 2], self)
+    board.move_piece([position.value[0], 3], board.square_content([position.value[0], 0]))
+    'O-O'
   end
 
   private
+
+  def small_rochade_check(board)
+    corner_piece = board.square_content([position.value[0], 7])
+    return false if has_moved
+    return false unless corner_piece.is_a?(Rook)
+    return false if corner_piece.has_moved
+    return false unless small_rochade_free?(board)
+
+    true
+  end
+
+  def small_rochade_free?(board)
+    return false if check?(board)
+
+    2.times do |i|
+      square = [position.value[0], position.value[1] + 1 + i]
+      return false if board.square_content(square)
+      return false if check?(board, square)
+    end
+
+    true
+  end
+
+  def big_rochade_check(board)
+    corner_piece = board.square_content([position.value[0], 0])
+    return false if has_moved
+    return false unless corner_piece.is_a?(Rook)
+    return false if corner_piece.has_moved
+    return false unless big_rochade_free?(board)
+
+    true
+  end
+
+  def big_rochade_free?(board)
+    return false if check?(board)
+
+    2.times do |i|
+      square = [position.value[0], position.value[1] - 1 - i]
+      return false if board.square_content(square)
+      return false if check?(board, square)
+    end
+
+    true
+  end
 
   def compile_moves
     @moves = [
@@ -266,9 +359,9 @@ class King < Piece
   end
 
   def validate_square(square, board)
-    enemy_pieces = board.pieces_in_play[[0, 1][team - 1]]
-    board.on_board?(square) &&
-      !board.blocked?(square, team) &&
-      enemy_pieces.any? { |piece| piece.square_legal?(square) }
+    return false unless super(square, board)
+    return false if check?(board, square)
+
+    true
   end
 end

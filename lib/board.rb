@@ -4,10 +4,11 @@ require_relative 'piece'
 require_relative 'vector_math'
 
 class Board
-  attr_reader :squares, :pieces_in_play
+  attr_reader :squares, :pieces_in_play, :en_passant_square
 
   def initialize
     @squares = Array.new(8) { Array.new(8) }
+    @en_passant_square = []
 
     @pieces_in_play = [[], []]
     setup_pieces
@@ -15,10 +16,10 @@ class Board
 
   def move_piece(square, piece)
     old_pos = piece.position.value
+    capture_en_passant(piece, square) if piece.is_a?(Pawn) && square == en_passant_square
+    update_en_passant(piece, square)
     piece.move(square)
-    set_square_content(piece.position.value, piece)
-    set_square_content(old_pos, nil)
-    update_pieces(piece)
+    update_board(old_pos, piece)
     piece
   end
 
@@ -34,8 +35,8 @@ class Board
 
   def blocked?(target_square, team)
     content = square_content(target_square)
-    return content if content.nil?
-    return false if content.team != team
+    return false unless content
+    return false unless content.team == team
 
     true
   end
@@ -57,14 +58,43 @@ class Board
 
   private
 
-  def update_pieces(moved_piece)
+  def update_board(old_pos, piece)
+    set_square_content(piece.position.value, piece)
+    set_square_content(old_pos, nil)
+    update_pieces
+    update_moves
+  end
+
+  def capture_en_passant(piece, square)
+    ranks = [4, 3]
+    file = square[1]
+    set_square_content([ranks[piece.team], file], nil)
+  end
+
+  def update_en_passant(piece, square)
+    return @en_passant_square = [] unless piece.is_a?(Pawn)
+    return @en_passant_square = [] unless piece.first_move
+    return @en_passant_square = [] unless (piece.position.value[0] - square[0]).abs == 2
+
+    ranks = [2, 5]
+    file = piece.position.value[1]
+    @en_passant_square = [ranks[piece.team], file]
+  end
+
+  def update_pieces
+    @pieces_in_play = [[], []]
+    @squares.each do |rank|
+      rank.each do |piece|
+        @pieces_in_play[piece.team].push(piece) if piece
+      end
+    end
+  end
+
+  def update_moves
     @pieces_in_play.each do |team|
       team.each do |team_piece|
         team_piece.find_legal_squares(self)
       end
-    end
-    @pieces_in_play[[0, 1][moved_piece.team - 1]].reject! do |enemy_piece|
-      enemy_piece.position.value == moved_piece.position.value
     end
   end
 

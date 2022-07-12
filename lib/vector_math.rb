@@ -6,4 +6,10 @@ module VectorMathInArrays
       x + y
     end
   end
+
+  def vector_scale(arr, int)
+    arr.map do |x|
+      x * int
+    end
+  end
 end

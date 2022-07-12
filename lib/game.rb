@@ -24,6 +24,7 @@ class Game
     turn = 1
     colors = %w[white black]
     loop do
+      puts @history
       board.print_board
       puts "It is #{colors[active_player]}'s turn."
       exit if checkmate?(active_player)
@@ -57,9 +58,9 @@ class Game
   end
 
   def process_turn(turn)
-    moved_piece = process_move
+    move = process_move
     @history << "#{turn}." if @active_player.zero?
-    @history << "#{map_move_to_notation(moved_piece, moved_piece.position.value)} "
+    @history << "#{map_move_to_notation(move)} "
     board.print_board
     @active_player = @players.rotate![0]
   end
@@ -110,9 +111,21 @@ class Game
     puts "You are moving the #{piece.class.name} on #{map_square_to_coords(piece.position.value)}."
     puts "It will move to #{map_square_to_coords(destination)}."
     puts 'Would you like to reconsider?'
-    return board.move_piece(destination, piece) unless input_yesno
+    return move_handler(piece, destination) unless input_yesno
 
     input_move
+  end
+
+  def move_handler(piece, destination)
+    if piece.is_a?(King)
+      case (piece.position.value[1] - destination[1])
+      when -2
+        return piece.small_rochade(board)
+      when 2
+        return piece.big_rochade(board)
+      end
+    end
+    board.move_piece(destination, piece)
   end
 
   def input_destination(piece)
@@ -161,6 +174,13 @@ class Game
     regex.match input
   end
 
+  def match_rochade(input)
+    return true if input == 'o-o'
+    return true if input == 'O-O'
+
+    false
+  end
+
   def map_square_to_coords(square)
     files = ('a'..'h').to_a
     rank = square[0]
@@ -168,7 +188,7 @@ class Game
     "#{files[file]}#{rank + 1}"
   end
 
-  def map_move_to_notation(piece, move)
+  def map_move_to_notation(piece)
     piece_map = {
       'Pawn' => '',
       'Rook' => 'R',
@@ -177,6 +197,8 @@ class Game
       'Queen' => 'Q',
       'King' => 'K'
     }
-    "#{piece_map[piece.class.name]}#{map_square_to_coords(move)}"
+    return piece if match_rochade(piece)
+
+    "#{piece_map[piece.class.name]}#{map_square_to_coords(piece.position.value)}"
   end
 end
