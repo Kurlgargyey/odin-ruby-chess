@@ -28,7 +28,6 @@ class Game
       process_turn(turn)
       turn += 1 if @active_player.zero?
       save_game
-      quit_prompt
     end
   end
 
@@ -144,10 +143,7 @@ class Game
     destination = input_destination(piece)
     puts "You are moving the #{piece.class.name} on #{map_square_to_coords(piece.position.value)}."
     puts "It will move to #{map_square_to_coords(destination)}."
-    puts 'Would you like to reconsider?'
-    return move_handler(piece, destination) unless input_yesno
-
-    input_move
+    return move_handler(piece, destination)
   end
 
   def move_handler(piece, destination)
