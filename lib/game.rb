@@ -98,12 +98,11 @@ class Game
 
   def insufficient_material?
     material = list_material
-    return false unless material.empty?
-    return false unless material.length == 1 && material[0].is_a?(Bishop)
-    return false unless material.length == 1 && material[0].is_a?(Knight)
+    return true if material.empty?
+    return true if material.length == 1 && material[0].is_a?(Bishop)
+    return true if material.length == 1 && material[0].is_a?(Knight)
 
-    puts "You do not have sufficient material left to reach a Checkmate. It's a draw!"
-    true
+    false
   end
 
   def list_material
