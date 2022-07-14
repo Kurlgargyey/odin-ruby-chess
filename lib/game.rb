@@ -4,12 +4,12 @@ require_relative 'board'
 require_relative 'piece'
 
 class Game
-  SAVE_PATH = '../../saves/save.dat'
+  SAVE_PATH = './saves/save.dat'
 
   attr_reader :history, :players, :active_player, :board
 
   def initialize
-    Dir.mkdir '../../saves' unless Dir.exist?('../../saves')
+    Dir.mkdir './saves' unless Dir.exist?('./saves')
     setup
     load_prompt
   end
@@ -22,12 +22,9 @@ class Game
 
   def game_loop
     turn = 1
-    colors = %w[white black]
     loop do
       puts @history
       board.print_board
-      puts "It is #{colors[active_player]}'s turn."
-      exit if checkmate?(active_player)
       process_turn(turn)
       turn += 1 if @active_player.zero?
       save_game
@@ -58,6 +55,8 @@ class Game
   end
 
   def process_turn(turn)
+    puts "It is #{%w[white black][active_player]}'s turn."
+    exit if checkmate?(active_player)
     move = process_move
     @history << "#{turn}." if @active_player.zero?
     @history << "#{map_move_to_notation(move)} "
@@ -188,7 +187,7 @@ class Game
     "#{files[file]}#{rank + 1}"
   end
 
-  def map_move_to_notation(piece)
+  def map_move_to_notation(piece_input)
     piece_map = {
       'Pawn' => '',
       'Rook' => 'R',
@@ -197,8 +196,8 @@ class Game
       'Queen' => 'Q',
       'King' => 'K'
     }
-    return piece if match_rochade(piece)
+    return piece_input if match_rochade(piece_input)
 
-    "#{piece_map[piece.class.name]}#{map_square_to_coords(piece.position.value)}"
+    "#{piece_map[piece_input.class.name]}#{map_square_to_coords(piece_input.position.value)}"
   end
 end
