@@ -238,7 +238,6 @@ class Queen < Piece
 
   def move(square)
     super(square)
-    @has_moved = true
   end
 
   private
@@ -267,6 +266,11 @@ class King < Piece
 
   def to_s
     !team.zero? ? "\u2654" : "\u265A"
+  end
+
+  def move(square)
+    super(square)
+    @has_moved = true
   end
 
   def find_legal_squares(board)
