@@ -32,31 +32,9 @@ class Game
     end
   end
 
-  def check?(team)
-    king = board.pieces_in_play[team].select do |e|
-      e.is_a?(King)
-    end[0]
-    if king.check?(board)
-      puts 'Your king is in check.'
-      return true
-    end
-    false
-  end
-
-  def checkmate?(team)
-    king = board.pieces_in_play[team].select do |e|
-      e.is_a?(King)
-    end[0]
-    if king.checkmate?(board)
-      puts 'Your king is in checkmate.'
-      return true
-    end
-    false
-  end
-
   def process_turn(turn)
     puts "It is #{%w[white black][active_player]}'s turn."
-    exit if checkmate?(active_player)
+    exit if over?
     move = process_move
     @history << "#{turn}." if @active_player.zero?
     @history << "#{map_move_to_notation(move)} "
@@ -78,6 +56,64 @@ class Game
   def load_prompt
     puts 'Would you like to load the game from savedata?'
     load_game if input_yesno
+  end
+
+  def check?(team)
+    king = board.pieces_in_play[team].select do |e|
+      e.is_a?(King)
+    end[0]
+    if king.check?(board)
+      puts 'Your king is in check.'
+      return true
+    end
+    false
+  end
+
+  def over?
+    return true if checkmate?(active_player)
+    return true if stalemate?(active_player)
+    return true if insufficient_material?
+
+    false
+  end
+
+  def checkmate?(team)
+    king = board.pieces_in_play[team].select do |e|
+      e.is_a?(King)
+    end[0]
+    if king.checkmate?(board)
+      puts 'Your king is in checkmate.'
+      return true
+    end
+    false
+  end
+
+  def stalemate?(team)
+    board.pieces_in_play[team].each do |piece|
+      return false unless piece.position.children.empty?
+    end
+    puts "You have no legal moves. It's a Stalemate!"
+    true
+  end
+
+  def insufficient_material?
+    material = list_material
+    return false unless material.empty?
+    return false unless material.length == 1 && material[0].is_a?(Bishop)
+    return false unless material.length == 1 && material[0].is_a?(Knight)
+
+    puts "You do not have sufficient material left to reach a Checkmate. It's a draw!"
+    true
+  end
+
+  def list_material
+    material = []
+    @players.each do |team|
+      board.pieces_in_play[team].each do |piece|
+        material.push(piece)
+      end
+    end
+    material.filter! { |piece| !piece.is_a?(King) }
   end
 
   def load_game
@@ -116,15 +152,21 @@ class Game
   end
 
   def move_handler(piece, destination)
-    if piece.is_a?(King)
-      case (piece.position.value[1] - destination[1])
-      when -2
-        return piece.small_rochade(board)
-      when 2
-        return piece.big_rochade(board)
-      end
-    end
+    check = rochade_check(piece, destination)
+    return check if check
+
     board.move_piece(destination, piece)
+  end
+
+  def rochade_check(piece, destination)
+    return unless piece.is_a?(King)
+
+    case (piece.position.value[1] - destination[1])
+    when -2
+      piece.small_rochade(board)
+    when 2
+      piece.big_rochade(board)
+    end
   end
 
   def input_destination(piece)
@@ -139,7 +181,7 @@ class Game
   def input_piece
     puts 'From which square would you like to move?'
     origin = input_square
-    content = board.square_content(origin)
+    content = board[origin]
     return content if content && content.team == @active_player
 
     puts "You don't have a piece on that square."

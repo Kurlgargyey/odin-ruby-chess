@@ -54,7 +54,7 @@ class Piece
   end
 
   def enemy_found?(target_square, board)
-    content = board.square_content(target_square)
+    content = board[target_square]
     !content.nil? && content.team != team
   end
 
@@ -88,6 +88,11 @@ class Pawn < Piece
   def move(square)
     @first_move = false
     super(square)
+  end
+
+  def promotion?
+    promo_ranks = [7, 0]
+    position.value[0] == promo_ranks[team]
   end
 
   private
@@ -125,7 +130,7 @@ class Pawn < Piece
 
   def validate_square(square, board)
     return false unless board.on_board?(square)
-    return true unless board.square_content(square)
+    return true unless board[square]
 
     false
   end
@@ -287,7 +292,7 @@ class King < Piece
     return unless small_rochade_check(board)
 
     board.move_piece([position.value[0], 6], self)
-    board.move_piece([position.value[0], 5], board.square_content([position.value[0], 7]))
+    board.move_piece([position.value[0], 5], board[[position.value[0], 7]])
     'o-o'
   end
 
@@ -295,16 +300,16 @@ class King < Piece
     return unless big_rochade_check(board)
 
     board.move_piece([position.value[0], 2], self)
-    board.move_piece([position.value[0], 3], board.square_content([position.value[0], 0]))
+    board.move_piece([position.value[0], 3], board[[position.value[0], 0]])
     'O-O'
   end
 
   private
 
   def small_rochade_check(board)
-    corner_piece = board.square_content([position.value[0], 7])
-    return false if has_moved
+    corner_piece = board[[position.value[0], 7]]
     return false unless corner_piece.is_a?(Rook)
+    return false if has_moved
     return false if corner_piece.has_moved
     return false unless small_rochade_free?(board)
 
@@ -316,7 +321,7 @@ class King < Piece
 
     2.times do |i|
       square = [position.value[0], position.value[1] + 1 + i]
-      return false if board.square_content(square)
+      return false if board[square]
       return false if check?(board, square)
     end
 
@@ -324,9 +329,9 @@ class King < Piece
   end
 
   def big_rochade_check(board)
-    corner_piece = board.square_content([position.value[0], 0])
-    return false if has_moved
+    corner_piece = board[[position.value[0], 0]]
     return false unless corner_piece.is_a?(Rook)
+    return false if has_moved
     return false if corner_piece.has_moved
     return false unless big_rochade_free?(board)
 
@@ -338,7 +343,7 @@ class King < Piece
 
     2.times do |i|
       square = [position.value[0], position.value[1] - 1 - i]
-      return false if board.square_content(square)
+      return false if board[square]
       return false if check?(board, square)
     end
 

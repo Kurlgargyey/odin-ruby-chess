@@ -24,7 +24,7 @@ class Board
   end
 
   def place_piece(piece)
-    set_square_content(piece.position.value, piece)
+    self[piece.position.value] = piece
     @pieces_in_play[piece.team].push(piece)
   end
 
@@ -34,7 +34,7 @@ class Board
   end
 
   def blocked?(target_square, team)
-    content = square_content(target_square)
+    content = self[target_square]
     return false unless content
     return false unless content.team == team
 
@@ -48,27 +48,46 @@ class Board
     print_footer
   end
 
-  def square_content(square)
+  def [](square)
     squares[square[0]][square[1]]
   end
 
-  def set_square_content(square, content)
+  def []=(square, content)
     squares[square[0]][square[1]] = content
   end
 
   private
 
   def update_board(old_pos, piece)
-    set_square_content(piece.position.value, piece)
-    set_square_content(old_pos, nil)
+    self[piece.position.value] = piece
+    self[old_pos] = nil
+    promotion_prompt(piece) if piece.is_a?(Pawn) && piece.promotion?
     update_pieces
     update_moves
+  end
+
+  def promotion_prompt(piece)
+    puts 'Your pawn has been promoted!'
+    puts 'Which piece would you like?'
+    puts '(Q)ueen, (R)ook, (B)ishop or K(N)ight?'
+    promotion(piece)
+  end
+
+  def promotion(piece)
+    piece_map = {
+      'R' => Rook,
+      'K' => Knight,
+      'B' => Bishop,
+      'Q' => Queen
+    }
+    selection = gets.chomp.upcase! until piece_map.include?(selection)
+    place_piece(piece_map[selection].new(piece.team, piece.position.value, self))
   end
 
   def capture_en_passant(piece, square)
     ranks = [4, 3]
     file = square[1]
-    set_square_content([ranks[piece.team], file], nil)
+    self[ranks[piece.team], file] = nil
   end
 
   def update_en_passant(piece, square)
