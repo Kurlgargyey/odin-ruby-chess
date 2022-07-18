@@ -236,10 +236,6 @@ class Queen < Piece
     end
   end
 
-  def move(square)
-    super(square)
-  end
-
   private
 
   def compile_moves
@@ -280,7 +276,7 @@ class King < Piece
   end
 
   def check?(board, square = position.value)
-    enemy_pieces = board.pieces_in_play[[0, 1][team - 1]]
+    enemy_pieces = board.pieces_in_play[team - 1]
     checking_pieces = []
     enemy_pieces.each do |piece|
       checking_pieces << piece if piece.square_legal?(square)
@@ -292,42 +288,12 @@ class King < Piece
     position.children.empty? && check?(board)
   end
 
-  def small_rochade(board)
-    return unless small_rochade_check(board)
-
-    board.move_piece([position.value[0], 6], self)
-    board.move_piece([position.value[0], 5], board[[position.value[0], 7]])
-    'o-o'
-  end
-
-  def big_rochade(board)
-    return unless big_rochade_check(board)
-
-    board.move_piece([position.value[0], 2], self)
-    board.move_piece([position.value[0], 3], board[[position.value[0], 0]])
-    'O-O'
-  end
-
-  private
-
   def small_rochade_check(board)
     corner_piece = board[[position.value[0], 7]]
     return false unless corner_piece.is_a?(Rook)
     return false if has_moved
     return false if corner_piece.has_moved
     return false unless small_rochade_free?(board)
-
-    true
-  end
-
-  def small_rochade_free?(board)
-    return false if check?(board)
-
-    2.times do |i|
-      square = [position.value[0], position.value[1] + 1 + i]
-      return false if board[square]
-      return false if check?(board, square)
-    end
 
     true
   end
@@ -342,13 +308,25 @@ class King < Piece
     true
   end
 
-  def big_rochade_free?(board)
+  private
+
+  def small_rochade_free?(board)
     return false if check?(board)
 
     2.times do |i|
+      square = [position.value[0], position.value[1] + 1 + i]
+      return false unless validate_square(square, board)
+    end
+
+    true
+  end
+
+  def big_rochade_free?(board)
+    return false if check?(board)
+
+    3.times do |i|
       square = [position.value[0], position.value[1] - 1 - i]
-      return false if board[square]
-      return false if check?(board, square)
+      return false unless validate_square(square, board)
     end
 
     true

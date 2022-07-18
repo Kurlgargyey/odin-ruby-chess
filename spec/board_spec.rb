@@ -82,11 +82,11 @@ describe Board do
       expect(board.blocked?(target_square, own_team)).to be true
     end
 
-    it 'returns nil if the target square is empty' do
+    it 'returns false if the target square is empty' do
       own_team = 0
       target_square = [0, 0]
       allow(board).to receive(:squares).and_return([[]])
-      expect(board.blocked?(target_square, own_team)).to be nil
+      expect(board.blocked?(target_square, own_team)).to be false
     end
 
     it 'returns false if there is an enemy piece in the way' do
@@ -96,5 +96,131 @@ describe Board do
       allow(board).to receive(:squares).and_return([[pawn_double]])
       expect(board.blocked?(target_square, own_team)).to be false
     end
+  end
+
+  describe '#move_piece' do
+    subject(:move_board) { described_class.new }
+    it 'makes a normal move' do
+      pawn = move_board[[1, 0]]
+      move_board.move_piece([3, 0], pawn)
+      rook = move_board[[0, 0]]
+      expect(move_board[[1, 0]]).to be nil
+      expect(move_board[[3, 0]]).to be pawn
+      expect(rook.square_legal?([1, 0])).to be true
+      expect(move_board.en_passant_square).to eq([2, 0])
+    end
+
+    it 'properly does an en passant capture' do
+      move_board.place_piece(Pawn.new(0, [4, 1], move_board))
+      attacker_pawn = move_board[[4, 1]]
+      captured_pawn = move_board[[6, 0]]
+      move_board.move_piece([4, 0], captured_pawn)
+      expect(move_board.en_passant_square).to eq([5, 0])
+      move_board.move_piece([5, 0], attacker_pawn)
+      expect(move_board[[5, 0]]).to be attacker_pawn
+      expect(move_board[[4, 1]]).to be nil
+      expect(move_board[[4, 0]]).to be nil
+      expect(move_board.en_passant_square).to be_empty
+    end
+  end
+
+  describe '#big_rochade' do
+    context 'when the rochade is free' do
+      board = described_class.new
+      board[[0, 1]] = nil
+      board[[0, 2]] = nil
+      board[[0, 3]] = nil
+      pawn = board[[1, 0]]
+      board.move_piece([2, 0], pawn)
+      subject(:free_queenside_board) { board }
+      it "clears the king's old square" do
+        expect(free_queenside_board[[0, 4]]).to be_a(King)
+        expect(free_queenside_board[[0, 1]]).to be nil
+        king = free_queenside_board[[0, 4]]
+        expect { free_queenside_board.big_rochade(king) }.to change { free_queenside_board[[0, 4]] }.to be nil
+      end
+
+      it "clears the rook's old square" do
+        expect(free_queenside_board[[0, 0]]).to be nil
+      end
+
+      it 'moves the king' do
+        expect(free_queenside_board[[0, 2]]).to be_a(King)
+      end
+
+      it 'moves the rook' do
+        expect(free_queenside_board[[0, 3]]).to be_a(Rook)
+      end
+    end
+
+    context 'when the king is in check' do
+      board = described_class.new
+      board[[0, 1]] = nil
+      board[[0, 2]] = nil
+      board[[0, 3]] = nil
+      pawn = board[[1, 0]]
+      board.move_piece([2, 0], pawn)
+      subject(:checked_queenside_board) { board }
+      before do
+        checked_queenside_board.place_piece(Knight.new(1, [2, 3], checked_queenside_board))
+      end
+
+      it "does not clear the king's old square" do
+        expect(checked_queenside_board[[0, 4]]).to be_a(King)
+        expect(checked_queenside_board[[0, 1]]).to be nil
+        king = checked_queenside_board[[0, 4]]
+        checked_queenside_board.big_rochade(king)
+        expect(checked_queenside_board[[0, 4]]).not_to be nil
+      end
+
+      it "does not clear the rook's old square" do
+        expect(checked_queenside_board[[0, 0]]).not_to be nil
+      end
+
+      it 'does not move the king' do
+        expect(checked_queenside_board[[0, 2]]).not_to be_a(King)
+      end
+
+      it 'does not move the rook' do
+        expect(checked_queenside_board[[0, 3]]).not_to be_a(Rook)
+      end
+    end
+
+    context 'when a transit square is in check' do
+      board = described_class.new
+      board[[0, 1]] = nil
+      board[[0, 2]] = nil
+      board[[0, 3]] = nil
+      pawn = board[[1, 0]]
+      board.move_piece([2, 0], pawn)
+      subject(:transit_checked_queenside_board) { board }
+      before do
+        transit_checked_queenside_board.place_piece(Knight.new(1, [2, 2], transit_checked_queenside_board))
+      end
+
+      it "does not clear the king's old square" do
+        expect(transit_checked_queenside_board[[0, 4]]).to be_a(King)
+        expect(transit_checked_queenside_board[[0, 1]]).to be nil
+        king = transit_checked_queenside_board[[0, 4]]
+        transit_checked_queenside_board.big_rochade(king)
+        expect(transit_checked_queenside_board[[0, 4]]).not_to be nil
+      end
+
+      it "does not clear the rook's old square" do
+        expect(transit_checked_queenside_board[[0, 0]]).not_to be nil
+      end
+
+      it 'does not move the king' do
+        expect(transit_checked_queenside_board[[0, 2]]).not_to be_a(King)
+      end
+
+      it 'does not move the rook' do
+        expect(transit_checked_queenside_board[[0, 3]]).not_to be_a(Rook)
+      end
+    end
+  end
+
+  describe '#small_rochade' do
+    subject(:kingside_board) { described_class.new }
   end
 end

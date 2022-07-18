@@ -15,12 +15,30 @@ class Board
   end
 
   def move_piece(square, piece)
-    old_pos = piece.position.value
-    capture_en_passant(piece, square) if piece.is_a?(Pawn) && square == en_passant_square
+    capture_en_passant(piece, square)
     update_en_passant(piece, square)
-    piece.move(square)
-    update_board(old_pos, piece)
+    update_piece(square, piece)
+    update_board
     piece
+  end
+
+  def small_rochade(piece)
+    return unless piece.small_rochade_check(self)
+
+    rank = piece.position.value[0]
+    piece.move([rank, 6])
+    self[[rank, 7]].move([rank, 5])
+    update_board
+    'o-o'
+  end
+
+  def big_rochade(piece)
+    return unless piece.big_rochade_check(self)
+
+    rank = piece.position.value[0]
+    move_piece([rank, 2], piece)
+    move_piece([rank, 3], self[[rank, 0]])
+    'O-O'
   end
 
   def place_piece(piece)
@@ -58,11 +76,16 @@ class Board
 
   private
 
-  def update_board(old_pos, piece)
+  def update_piece(square, piece)
+    old_pos = piece.position.value
+    piece.move(square)
     self[piece.position.value] = piece
     self[old_pos] = nil
     promotion_prompt(piece) if piece.is_a?(Pawn) && piece.promotion?
-    update_pieces
+  end
+
+  def update_board
+    update_piece_ledger
     update_moves
   end
 
@@ -85,9 +108,11 @@ class Board
   end
 
   def capture_en_passant(piece, square)
+    return unless piece.is_a?(Pawn) && square == en_passant_square
+
     ranks = [4, 3]
     file = square[1]
-    self[ranks[piece.team], file] = nil
+    self[[ranks[piece.team], file]] = nil
   end
 
   def update_en_passant(piece, square)
@@ -100,7 +125,7 @@ class Board
     @en_passant_square = [ranks[piece.team], file]
   end
 
-  def update_pieces
+  def update_piece_ledger
     @pieces_in_play = [[], []]
     @squares.each do |rank|
       rank.each do |piece|

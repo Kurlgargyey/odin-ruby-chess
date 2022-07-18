@@ -143,7 +143,7 @@ class Game
     destination = input_destination(piece)
     puts "You are moving the #{piece.class.name} on #{map_square_to_coords(piece.position.value)}."
     puts "It will move to #{map_square_to_coords(destination)}."
-    return move_handler(piece, destination)
+    move_handler(piece, destination)
   end
 
   def move_handler(piece, destination)
@@ -158,9 +158,9 @@ class Game
 
     case (piece.position.value[1] - destination[1])
     when -2
-      piece.small_rochade(board)
+      board.small_rochade(piece)
     when 2
-      piece.big_rochade(board)
+      board.big_rochade(piece)
     end
   end
 
