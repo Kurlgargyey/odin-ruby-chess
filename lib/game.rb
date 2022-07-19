@@ -37,7 +37,6 @@ class Game
     move = process_move
     @history << "#{turn}." if @active_player.zero?
     @history << "#{map_move_to_notation(move)} "
-    board.print_board
     @active_player = @players.rotate![0]
   end
 

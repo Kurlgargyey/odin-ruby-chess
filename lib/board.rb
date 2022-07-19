@@ -25,19 +25,18 @@ class Board
   def small_rochade(piece)
     return unless piece.small_rochade_check(self)
 
-    rank = piece.position.value[0]
-    piece.move([rank, 6])
-    self[[rank, 7]].move([rank, 5])
-    update_board
+    king_rank = piece.position.value[0]
+    move_piece([king_rank, 6], piece)
+    move_piece([king_rank, 5], self[[king_rank, 7]])
     'o-o'
   end
 
   def big_rochade(piece)
     return unless piece.big_rochade_check(self)
 
-    rank = piece.position.value[0]
-    move_piece([rank, 2], piece)
-    move_piece([rank, 3], self[[rank, 0]])
+    king_rank = piece.position.value[0]
+    move_piece([king_rank, 2], piece)
+    move_piece([king_rank, 3], self[[king_rank, 0]])
     'O-O'
   end
 
@@ -135,11 +134,16 @@ class Board
   end
 
   def update_moves
-    @pieces_in_play.each do |team|
-      team.each do |team_piece|
-        team_piece.find_legal_squares(self)
+    kings = []
+    @pieces_in_play.flatten.each do |piece|
+      if piece.is_a?(King)
+        kings.push(piece)
+        next
       end
+
+      piece.find_legal_squares(self)
     end
+    kings.each { |king| king.find_legal_squares(self) }
   end
 
   def print_rank(rank, idx)
