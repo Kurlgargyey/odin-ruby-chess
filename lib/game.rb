@@ -52,6 +52,8 @@ class Game
   end
 
   def load_prompt
+    return unless File.exist?(Game::SAVE_PATH)
+
     puts 'Would you like to load the game from savedata?'
     load_game if input_yesno
   end
